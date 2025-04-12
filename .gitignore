@@ -1,0 +1,32 @@
+# Bytecode Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# MLflow tracking data
+mlruns/
+*.db
+
+# Models and plots
+model/
+plots/
+
+# Logs and cache
+*.log
+*.tmp
+
+# Prefect cache/server folders (if any)
+.prefect/
+
+# System-specific
+.DS_Store
+Thumbs.db
