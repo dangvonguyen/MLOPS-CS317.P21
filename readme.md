@@ -130,6 +130,10 @@ Response:
 ]
 ```
 
+## 📹 Demo
+
+![Demo](./assets/demo_call_api.gif)
+
 ---
 
 ## 📌 Notes
