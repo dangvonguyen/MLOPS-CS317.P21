@@ -1,9 +1,10 @@
 import os
 import re
-
 from contextlib import asynccontextmanager
+
 import joblib
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import Response
 from nltk.corpus import stopwords
 from pydantic import BaseModel
 
@@ -66,6 +67,11 @@ async def predict(input_data: TextInput):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/metrics")
+async def metrics():
+    return Response()
+
+
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
@@ -74,4 +80,4 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("api:app", host="0.0.0.0", port=8000)
