@@ -1,6 +1,8 @@
 services:
   sentiment-api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile    
     ports:
       - "8000:8000"
     volumes:
@@ -12,6 +14,28 @@ services:
       timeout: 10s
       retries: 5
       start_period: 40s
+    networks:
+      - monitoring-net
+
+  retraining-service:
+    build: 
+      context: .
+      dockerfile: Dockerfile.retrain
+    volumes:
+      - ./model:/app/model
+      - ./data:/app/data
+      - ./src:/app/src
+      - ./mlruns:/app/mlruns
+    environment:
+      - MLFLOW_TRACKING_URI=""
+      - MLFLOW_DISABLE_ENV_CREATION=true
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - monitoring-net
 
@@ -33,11 +57,28 @@ services:
     networks:
       - monitoring-net
 
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./monitoring/alertmanager/template:/etc/alertmanager/template
+      - alertmanager_data:/alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+      - "--web.external-url=http://localhost:9093"
+    ports:
+      - "9093:9093"
+    networks:
+      - monitoring-net
+
   prometheus:
     image: prom/prometheus:v3.4.1
     restart: unless-stopped
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/rules.yml:/etc/prometheus/rules.yml
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -53,6 +94,7 @@ services:
       - monitoring-net
     depends_on:
       - node-exporter
+      - alertmanager
 
   grafana:
     image: grafana/grafana:12.0.1
@@ -66,6 +108,7 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_TOKEN_ROTATION_INTERVAL_MINUTES=60
     ports:
       - "3000:3000"
     networks:
@@ -76,6 +119,7 @@ services:
 volumes:
   prometheus_data:
   grafana_data:
+  alertmanager_data:
 
 networks:
   monitoring-net:
