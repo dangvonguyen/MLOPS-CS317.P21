@@ -18,6 +18,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY model/ ./model/
 
+COPY monitoring/logging/logging_config.json .
+
 COPY api.py .
 
 FROM base AS runtime

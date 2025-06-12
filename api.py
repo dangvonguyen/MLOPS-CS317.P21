@@ -1,3 +1,6 @@
+import json
+import logging
+import logging.config
 import os
 import re
 import time
@@ -6,9 +9,21 @@ from contextlib import asynccontextmanager
 import joblib
 from fastapi import FastAPI, HTTPException, Request
 from nltk.corpus import stopwords
-from prometheus_client import Histogram, Summary, CollectorRegistry
+from prometheus_client import CollectorRegistry, Histogram, Summary
 from prometheus_fastapi_instrumentator import Instrumentator, metrics
 from pydantic import BaseModel
+
+
+def setup_logging():
+    with open("logging_config.json", "r") as f:
+        config = json.load(f)
+
+    logging.config.dictConfig(config)
+
+
+# Initialize logger
+setup_logging()
+logger = logging.getLogger("api")
 
 
 # Load model
@@ -34,10 +49,19 @@ MODEL_CONFIDENCE = Histogram(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global model
+    logger.info("Starting up sentiment analysis API")
     if not os.path.exists(MODEL_PATH):
-        raise RuntimeError(f"Model file not found at {MODEL_PATH}")
+        error_msg = f"Model file not found at {MODEL_PATH}"
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
+
+    logger.info(f"Loading model from {MODEL_PATH}")
     model = joblib.load(MODEL_PATH)
+
+    logger.info("Model loaded successfully")
     yield
+
+    logger.info("Shutting down API")
     model = None
 
 
@@ -52,19 +76,32 @@ instrumentator.add(metrics.response_size())
 instrumentator.instrument(app, metric_namespace="sentiment_api").expose(
     app, include_in_schema=False, should_gzip=True
 )
+logger.info("Prometheus instrumentation configured")
 
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
     start_time = time.time()
+    path = request.url.path
+    method = request.method
+
+    logger.info(f"Request started: {method} {path}")
 
     try:
         response = await call_next(request)
         process_time = time.time() - start_time
         response.headers["X-Process-Time"] = str(process_time)
+
+        logger.info(
+            f"Request completed: {method} {path} - {response.status_code} in {process_time:.4f}s"
+        )
         return response
+
     except Exception as exc:
         process_time = time.time() - start_time
+        logger.error(
+            f"Request failed: {method} {path} after {process_time:.4f}s", exc_info=True
+        )
         raise exc
 
 
@@ -92,6 +129,7 @@ class PredictionResult(BaseModel):
 @app.post("/predict", response_model=list[PredictionResult])
 async def predict(input_data: TextInput):
     try:
+        logger.info(f"Received prediction request with {len(input_data.texts)} text(s)")
         # Measure inference time
         start_time = time.time()
 
@@ -106,6 +144,7 @@ async def predict(input_data: TextInput):
 
         inference_time = time.time() - start_time
         MODEL_INFERENCE_TIME.observe(inference_time)
+        logger.debug(f"Model inference completed in {inference_time:.4f} seconds")
 
         results = []
         for i, pred in enumerate(preds):
@@ -125,8 +164,13 @@ async def predict(input_data: TextInput):
                     confidence=float(confidence),
                 )
             )
+        logger.info(
+            f"Prediction completed successfully for {len(input_data.texts)} text(s)"
+        )
         return results
+
     except Exception as e:
+        logger.error(f"Error during prediction: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -138,4 +182,5 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
 
+    logger.info("Starting server with uvicorn")
     uvicorn.run("api:app", host="0.0.0.0", port=8000)
