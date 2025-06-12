@@ -1,3 +1,6 @@
+# Grafana Dashboard Provisioning
+# This file automatically loads the existing dashboards
+
 apiVersion: 1
 
 providers:

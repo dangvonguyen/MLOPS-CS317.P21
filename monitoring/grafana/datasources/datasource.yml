@@ -1,3 +1,6 @@
+# Grafana DataSource Configuration
+# This file tells Grafana how to connect to Prometheus
+
 apiVersion: 1
 
 datasources:
