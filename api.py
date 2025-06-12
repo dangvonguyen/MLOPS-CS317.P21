@@ -6,11 +6,29 @@ from contextlib import asynccontextmanager
 import joblib
 from fastapi import FastAPI, HTTPException, Request
 from nltk.corpus import stopwords
+from prometheus_client import Histogram, Summary, CollectorRegistry
 from prometheus_fastapi_instrumentator import Instrumentator, metrics
 from pydantic import BaseModel
 
+
 # Load model
 MODEL_PATH = "model/sentiment_model.joblib"
+
+# Create a custom registry to avoid duplicate registrations
+registry = CollectorRegistry()
+
+# Define custom metrics
+MODEL_INFERENCE_TIME = Summary(
+    "model_inference_time_seconds",
+    "Time spent on model inference in seconds",
+    registry=registry,
+)
+MODEL_CONFIDENCE = Histogram(
+    "model_confidence_score",
+    "Model confidence scores",
+    buckets=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    registry=registry,
+)
 
 
 @asynccontextmanager
@@ -26,7 +44,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Sentiment Analysis API", lifespan=lifespan)
 
 # Setup Prometheus instrumentation
-instrumentator = Instrumentator()
+instrumentator = Instrumentator(registry=registry)
 instrumentator.add(metrics.latency())
 instrumentator.add(metrics.requests())
 instrumentator.add(metrics.request_size())
@@ -68,23 +86,43 @@ class PredictionResult(BaseModel):
     text: str
     sentiment: str
     label: int
+    confidence: float
 
 
 @app.post("/predict", response_model=list[PredictionResult])
 async def predict(input_data: TextInput):
     try:
+        # Measure inference time
+        start_time = time.time()
+
         # Clean inputs
         cleaned_texts = [clean_text(text) for text in input_data.texts]
         preds = model.predict(cleaned_texts)
 
+        # Get confidence scores
+        confidence_scores = None
+        if hasattr(model, "predict_proba"):
+            confidence_scores = model.predict_proba(cleaned_texts)
+
+        inference_time = time.time() - start_time
+        MODEL_INFERENCE_TIME.observe(inference_time)
+
         results = []
         for i, pred in enumerate(preds):
             sentiment = "positive" if pred == 1 else "negative"
+
+            # Calculate confidence score
+            confidence = 0.0
+            if confidence_scores is not None:
+                confidence = confidence_scores[i][pred]
+                MODEL_CONFIDENCE.observe(confidence)
+
             results.append(
                 PredictionResult(
                     text=input_data.texts[i],
                     sentiment=sentiment,
                     label=pred,
+                    confidence=float(confidence),
                 )
             )
         return results

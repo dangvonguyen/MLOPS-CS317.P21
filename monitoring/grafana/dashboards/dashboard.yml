@@ -17,3 +17,11 @@ providers:
     options:
       path: /etc/grafana/dashboards/server-metrics.json
       foldersFromFilesStructure: true
+  - name: "Model Monitoring"
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 10
+    options:
+      path: /etc/grafana/dashboards/model-metrics.json
+      foldersFromFilesStructure: true
