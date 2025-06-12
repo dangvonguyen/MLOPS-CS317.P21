@@ -1,11 +1,12 @@
 import os
 import re
+import time
 from contextlib import asynccontextmanager
 
 import joblib
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response
+from fastapi import FastAPI, HTTPException, Request
 from nltk.corpus import stopwords
+from prometheus_fastapi_instrumentator import Instrumentator, metrics
 from pydantic import BaseModel
 
 # Load model
@@ -23,6 +24,30 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Sentiment Analysis API", lifespan=lifespan)
+
+# Setup Prometheus instrumentation
+instrumentator = Instrumentator()
+instrumentator.add(metrics.latency())
+instrumentator.add(metrics.requests())
+instrumentator.add(metrics.request_size())
+instrumentator.add(metrics.response_size())
+instrumentator.instrument(app, metric_namespace="sentiment_api").expose(
+    app, include_in_schema=False, should_gzip=True
+)
+
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        response.headers["X-Process-Time"] = str(process_time)
+        return response
+    except Exception as exc:
+        process_time = time.time() - start_time
+        raise exc
 
 
 def clean_text(text: str) -> str:
@@ -65,11 +90,6 @@ async def predict(input_data: TextInput):
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/metrics")
-async def metrics():
-    return Response()
 
 
 @app.get("/health")

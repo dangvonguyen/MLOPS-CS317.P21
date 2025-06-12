@@ -1,0 +1,93 @@
+{
+  "title": "API Monitoring",
+  "id": null,
+  "tags": ["api", "fastapi", "prometheus"],
+  "timezone": "browser",
+  "schemaVersion": 36,
+  "version": 0,
+  "refresh": "5s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "title": "Requests Per Second",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\"}[1m]))",
+          "legendFormat": "Total Requests"
+        }
+      ]
+    },
+    {
+      "title": "Request Latency (seconds)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(sentiment_api_http_request_duration_seconds_bucket{job=\"sentiment-api\"}[1m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(sentiment_api_http_request_duration_seconds_bucket{job=\"sentiment-api\"}[1m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(sentiment_api_http_request_duration_seconds_bucket{job=\"sentiment-api\"}[1m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "title": "Error Rate (%)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\", status=\"4xx\"}[1m])) / sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\"}[1m])) * 100 or vector(0)",
+          "legendFormat": "4xx Errors"
+        },
+        {
+          "expr": "sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\", status=\"5xx\"}[1m])) / sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\"}[1m])) * 100 or vector(0)",
+          "legendFormat": "5xx Errors"
+        }
+      ]
+    },
+    {
+      "title": "Requests by Endpoint",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\"}[1m])) by (handler)",
+          "legendFormat": "{{handler}}"
+        }
+      ]
+    },
+    {
+      "title": "Request Size (bytes)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(sentiment_api_http_request_size_bytes_sum{job=\"sentiment-api\"}[1m])) / sum(rate(sentiment_api_http_request_size_bytes_count{job=\"sentiment-api\"}[1m])) or vector(0)",
+          "legendFormat": "Average Request Size"
+        }
+      ]
+    },
+    {
+      "title": "Response Size (bytes)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(sentiment_api_http_response_size_bytes_sum{job=\"sentiment-api\"}[1m])) / sum(rate(sentiment_api_http_response_size_bytes_count{job=\"sentiment-api\"}[1m])) or vector(0)",
+          "legendFormat": "Average Response Size"
+        }
+      ]
+    }
+  ]
+}
