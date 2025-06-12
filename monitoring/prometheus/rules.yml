@@ -1,16 +1,6 @@
 groups:
   - name: sentiment_api_alerts
     rules:
-      - alert: TestRetrainingAlert
-        expr: vector(1)
-        for: 10s
-        labels:
-          severity: critical
-          action: retrain
-        annotations:
-          summary: "Test retraining alert"
-          description: "This alert is always firing to test the retraining pipeline"
-
       - alert: HighErrorRate
         expr: (sum(rate(sentiment_api_http_requests_total{status=~"5.."}[5m])) / sum(rate(sentiment_api_http_requests_total[5m]))) * 100 > 50
         for: 2m
