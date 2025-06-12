@@ -47,11 +47,11 @@
       "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
       "targets": [
         {
-          "expr": "sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\", status=\"4xx\"}[1m])) / sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\"}[1m])) * 100 or vector(0)",
+          "expr": "sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\", status=\"4xx\"}[1m])) / sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\"}[1m])) * 100",
           "legendFormat": "4xx Errors"
         },
         {
-          "expr": "sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\", status=\"5xx\"}[1m])) / sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\"}[1m])) * 100 or vector(0)",
+          "expr": "sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\", status=\"5xx\"}[1m])) / sum(rate(sentiment_api_http_requests_total{job=\"sentiment-api\"}[1m])) * 100",
           "legendFormat": "5xx Errors"
         }
       ]
@@ -73,7 +73,7 @@
       "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
       "targets": [
         {
-          "expr": "sum(rate(sentiment_api_http_request_size_bytes_sum{job=\"sentiment-api\"}[1m])) / sum(rate(sentiment_api_http_request_size_bytes_count{job=\"sentiment-api\"}[1m])) or vector(0)",
+          "expr": "sum(rate(sentiment_api_http_request_size_bytes_sum{job=\"sentiment-api\"}[1m])) / sum(rate(sentiment_api_http_request_size_bytes_count{job=\"sentiment-api\"}[1m]))",
           "legendFormat": "Average Request Size"
         }
       ]
@@ -84,7 +84,7 @@
       "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
       "targets": [
         {
-          "expr": "sum(rate(sentiment_api_http_response_size_bytes_sum{job=\"sentiment-api\"}[1m])) / sum(rate(sentiment_api_http_response_size_bytes_count{job=\"sentiment-api\"}[1m])) or vector(0)",
+          "expr": "sum(rate(sentiment_api_http_response_size_bytes_sum{job=\"sentiment-api\"}[1m])) / sum(rate(sentiment_api_http_response_size_bytes_count{job=\"sentiment-api\"}[1m]))",
           "legendFormat": "Average Response Size"
         }
       ]
