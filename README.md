@@ -3,10 +3,12 @@
 This project demonstrates a complete **MLOps pipeline** for sentiment classification on airline tweets using traditional ML (SVM), with features including:
 
 - Data preprocessing
-- Hyperparameter tuning (Optuna)
-- Experiment tracking (MLflow)
-- Task orchestration (Prefect)
-- Deployment-ready model structure
+- Hyperparameter tuning with Optuna
+- Experiment tracking with MLflow
+- Task orchestration with Prefect
+- Model deployment with FastAPI
+- Monitoring with Prometheus & Grafana
+- Containerization with Docker
 
 ---
 
@@ -48,6 +50,8 @@ This project demonstrates a complete **MLOps pipeline** for sentiment classifica
 | **Containerization**      | ✅ Using Docker with multi-stage builds                           |
 | **Custom Prediction**     | Use `predict.py` with any custom input                            |
 | **Confusion Matrix**      | Plot and log matrix to MLflow                                     |
+| **Monitoring**            | ✅ Prometheus metrics + Grafana dashboards                        |
+| **Error Handling**        | ✅ Comprehensive error handling and logging                       |
 
 ---
 
@@ -130,9 +134,46 @@ Response:
 ]
 ```
 
+## 📊 Monitoring with Prometheus & Grafana
+
+The project includes monitoring capabilities using Prometheus for metrics collection and Grafana for visualization.
+
+### Metrics Tracked
+
+- API request latency
+- Prediction success/failure rates
+- Model inference time
+- System resource usage
+- Error rates and types
+
+### Setup Monitoring Stack
+
+```bash
+$ docker compose up
+```
+
+This will start:
+
+- Prometheus on `http://localhost:9090`
+- Grafana on `http://localhost:3000` (default credentials: admin/admin)
+
 ## 📹 Demo
 
+Quick demo of the API in action - sending requests and getting sentiment predictions
+
 ![Demo](./assets/demo_call_api.gif)
+
+Quick demo of the metrics dashboard
+
+- Model Metrics
+- API Monitoring
+- System Monitoring
+
+![Metrics Dashboard](./assets/dashboard.gif)
+
+Sample error logs from the API:
+
+![Error Log](./assets/error_log.png)
 
 ---
 
